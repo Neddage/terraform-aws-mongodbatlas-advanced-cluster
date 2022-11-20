@@ -1,6 +1,12 @@
 variable "project_name" {
-  description = "The name of the project you want to create"
+  description = "The name of the project you want to create/use"
   type        = string
+}
+
+variable "create_new_project" {
+  description = "Whether we should create a new project rather than using an existing one."
+  type = bool
+  default = false
 }
 
 variable "org_id" {

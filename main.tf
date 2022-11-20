@@ -19,10 +19,10 @@ terraform {
 }
 
 # ---------------------------------------------------------------------------------------------------------------------
-# CREATE AN ATLAS PROJECT THAT THE CLUSTER WILL RUN INSIDE
+# IF var.create_new_project=true CREATE AN ATLAS PROJECT THAT THE CLUSTER WILL RUN INSIDE
 # ---------------------------------------------------------------------------------------------------------------------
-
 resource "mongodbatlas_project" "project" {
+  count = var.create_new_project ? 1 : 0
   name   = var.project_name
   org_id = var.org_id
 
@@ -36,6 +36,15 @@ resource "mongodbatlas_project" "project" {
     }
   }
 
+}
+
+# ---------------------------------------------------------------------------------------------------------------------
+# IF var.create_new_project=false CREATE DATA RESOURCE FOTR EXISTING PROJECT 
+# ---------------------------------------------------------------------------------------------------------------------
+data "mongodbatlas_project" "project" {
+  # If we are meant to be creating a new project, don't create this data resource as the project won't exist yet
+  count = var.create_new_project ? 0 : 1
+  name = var.project_name
 }
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -56,10 +65,10 @@ resource "mongodbatlas_teams" "team" {
 
 #Optionall, if no variable is passed, the loop will run on an empty object.
 
-resource "mongodbatlas_project_ip_whitelist" "whitelists" {
+resource "mongodbatlas_project_ip_access_list" "whitelists" {
   for_each = var.white_lists
 
-  project_id = mongodbatlas_project.project.id
+  project_id = var.create_new_project ? mongodbatlas_project.project[0].id : data.mongodbatlas_project.project[0].id
   comment    = each.key
   cidr_block = each.value
 }
@@ -69,7 +78,7 @@ resource "mongodbatlas_project_ip_whitelist" "whitelists" {
 # ---------------------------------------------------------------------------------------------------------------------
 
 resource "mongodbatlas_cluster" "cluster" {
-  project_id                   = mongodbatlas_project.project.id
+  project_id                   = var.create_new_project ? mongodbatlas_project.project[0].id : data.mongodbatlas_project.project[0].id
   provider_name                = local.cloud_provider
   provider_region_name         = var.region
   name                         = var.cluster_name
@@ -96,7 +105,7 @@ resource "mongodbatlas_network_peering" "mongo_peer" {
   for_each = var.vpc_peer
 
   accepter_region_name   = each.value.region
-  project_id             = mongodbatlas_project.project.id
+  project_id             = var.create_new_project ? mongodbatlas_project.project[0].id : data.mongodbatlas_project.project[0].id
   container_id           = mongodbatlas_cluster.cluster.container_id
   provider_name          = local.cloud_provider
   route_table_cidr_block = each.value.route_table_cidr_block
