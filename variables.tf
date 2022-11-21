@@ -3,15 +3,20 @@ variable "project_name" {
   type        = string
 }
 
+variable "org_id" {
+  description = "The ID of the Atlas organization you want to create the project within"
+  type        = string
+}
+
+variable "region" {
+  description = "The AWS region-name that the cluster will be deployed on"
+  type        = string
+}
+
 variable "create_new_project" {
   description = "Whether we should create a new project rather than using an existing one."
   type = bool
   default = false
-}
-
-variable "org_id" {
-  description = "The ID of the Atlas organization you want to create the project within"
-  type        = string
 }
 
 variable "teams" {
@@ -24,11 +29,6 @@ variable "white_lists" {
   description = "An object that contains all the network white-lists that should be created in the project"
   type        = map(any)
   default     = {}
-}
-
-variable "region" {
-  description = "The AWS region-name that the cluster will be deployed on"
-  type        = string
 }
 
 variable "region_aws_atlas_map" {
@@ -49,8 +49,8 @@ variable "cluster_name" {
   type        = string
 }
 
-variable "instance_type" {
-  description = "The Atlas instance-type name"
+variable "instance_size" {
+  description = "The Atlas instance-type name. ie. M10"
   type        = string
 }
 
@@ -147,14 +147,10 @@ variable "vpc_peer" {
   default     = {}
 }
 
-variable "termination_protecton_enabled" {
+variable "termination_protection_enabled" {
   description = "Whether termination protections should be enabled, defaults to true"
   type = bool
   default = true
-}
-
-locals {
-  cloud_provider = "AWS"
 }
 
 
