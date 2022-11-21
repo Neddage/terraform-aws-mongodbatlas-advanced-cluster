@@ -31,12 +31,16 @@ variable "region" {
   type        = string
 }
 
-variable "region_map" {
-  desciption = "Maps aws region format to the format required by Mongo. ie. eu-west-2 = EU_WEST_2"
+variable "region_aws_atlas_map" {
+  desciption = "Maps aws region format to the atlas region format ie. eu-west-2 = EU_WEST_2"
   type = map(any)
   default = {
     "eu-west-1" = "EU_WEST_1"
     "eu-west-2" = "EU_WEST_2"
+    "eu-west-3" = "EU_WEST_3"
+    "eu-central-1" = "EU_CENTRAL_1"
+    "eu-north-1" = "EU_NORTH_1"
+    "eu-south-1" = "EU_SOUTH_1"
   }
 }
 
