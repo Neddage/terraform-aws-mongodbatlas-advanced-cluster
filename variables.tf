@@ -32,7 +32,7 @@ variable "region" {
 }
 
 variable "region_aws_atlas_map" {
-  desciption = "Maps aws region format to the atlas region format ie. eu-west-2 = EU_WEST_2"
+  description = "Maps aws region format to the atlas region format ie. eu-west-2 = EU_WEST_2"
   type = map(any)
   default = {
     "eu-west-1" = "EU_WEST_1"
@@ -99,13 +99,37 @@ variable "auto_scaling_disk_gb_enabled" {
   default     = true
 }
 
+variable "auto_scaling_compute_enabled" {
+  description = "Indicating if compute auto scaling should be enabled"
+  type        = bool
+  default     = false
+}
+
+variable "auto_scaling_compute_scale_down_enabled" {
+  description = "Flag that indicates whether the instance size may scale down."
+  type        = bool
+  default     = false
+}
+
+variable "auto_scaling_compute_min_instance_size" {
+  description = "The minimum instance size for compute autoscaling"
+  type = string
+  default = null
+}
+
+variable "auto_scaling_compute_max_instance_size" {
+  description = "The maximum instance size for compute autoscaling"
+  type = string
+  default = null
+}
+
 variable "volume_type" {
   description = "STANDARD or PROVISIONED for IOPS higher than the default instance IOPS"
   type        = string
   default     = "STANDARD"
 }
 
-variable "provider_disk_iops" {
+variable "disk_iops" {
   description = "The maximum IOPS the system can perform"
   type        = number
   default     = null
