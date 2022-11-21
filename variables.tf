@@ -31,6 +31,15 @@ variable "region" {
   type        = string
 }
 
+variable "region_map" {
+  desciption = "Maps aws region format to the format required by Mongo. ie. eu-west-2 = EU_WEST_2"
+  type = map(any)
+  default = {
+    "eu-west-1" = "EU_WEST_1"
+    "eu-west-2" = "EU_WEST_2"
+  }
+}
+
 variable "cluster_name" {
   description = "The cluster name"
   type        = string
@@ -62,16 +71,16 @@ variable "replication_factor" {
   default     = null
 }
 
-variable "provider_backup" {
+variable "backup_enabled" {
   description = "Indicating if the cluster uses Cloud Backup for backups"
   type        = bool
   default     = true
 }
 
 variable "pit_enabled" {
-  description = "Indicating if the cluster uses Continuous Cloud Backup, if set to true - provider_backup must also be set to true"
+  description = "Indicating if the cluster uses Continuous Cloud Backup, if set to true - backup_enabled must also be set to true"
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "disk_size_gb" {
@@ -98,7 +107,7 @@ variable "provider_disk_iops" {
   default     = null
 }
 
-variable "provider_encrypt_ebs_volume" {
+variable "encryption_at_rest_enabled" {
   description = "Indicating if the AWS EBS encryption feature encrypts the server’s root volume"
   type        = bool
   default     = false
@@ -108,6 +117,12 @@ variable "vpc_peer" {
   description = "An object that contains all VPC peering requests from the cluster to AWS VPC's"
   type        = map(any)
   default     = {}
+}
+
+variable "termination_protecton_enabled" {
+  description = "Whether termination protections should be enabled, defaults to true"
+  type = bool
+  default = true
 }
 
 locals {
