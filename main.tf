@@ -111,23 +111,22 @@ resource "mongodbatlas_advanced_cluster" "cluster" {
  
   # Ignore instance_size lifecycle changes so if the clsuter is scaled up/down terraform doesn't try to reset it
   # THis isn't working, have implimented against documentation bgut stil no dice. So commented out for now
-  # lifecycle {
-  #   ignore_changes = [
-  #     instance_size
-  #   ]
-  # }
+  lifecycle {
+    ignore_changes = [
+      instance_size
+    ]
+  }
 }
 
 # ---------------------------------------------------------------------------------------------------------------------
 # CREATE AWS PEER REQUESTS TO AWS VPC
 # ---------------------------------------------------------------------------------------------------------------------
-
-
 resource "mongodbatlas_network_peering" "mongo_peer" {
   for_each = var.vpc_peer
 
   accepter_region_name   = each.value.region
   project_id             = var.create_new_project ? mongodbatlas_project.project[0].id : data.mongodbatlas_project.project[0].id
+  # Doesn't feel like the best way to do this, however I think there should only ever be one container_id anyway, certainly for our needs of AWS only
   container_id           = mongodbatlas_advanced_cluster.cluster.replication_specs.*.container_id[0]
   provider_name          = "AWS"
   route_table_cidr_block = each.value.route_table_cidr_block
