@@ -148,10 +148,16 @@ variable "encryption_at_rest_enabled" {
   default     = false
 }
 
-variable "vpc_peer" {
-  description = "An object that contains all VPC peering requests from the cluster to AWS VPC's"
-  type        = map(any)
-  default     = {}
+variable "vpc_peers" {
+  description = "A list of objects that contains all the info needed for AWS VPC peers"
+  type        = list(object({
+    aws_account_id = string
+    region = string
+    vpc_id = string
+    route_table_cidr_block = string
+    route_tables: list(string) # Route tables to add routes to atlas vpc to
+  }))
+  default     = []
 }
 
 variable "termination_protection_enabled" {
