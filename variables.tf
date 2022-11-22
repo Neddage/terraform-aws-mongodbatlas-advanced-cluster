@@ -13,11 +13,11 @@ variable "region" {
   type        = string
 }
 
-variable "create_new_project" {
-  description = "Whether we should create a new project rather than using an existing one."
-  type = bool
-  default = false
-}
+# variable "create_new_project" {
+#   description = "Whether we should create a new project rather than using an existing one."
+#   type = bool
+#   default = false
+# }
 
 variable "teams" {
   description = "An object that contains all the groups that should be created in the project"
@@ -54,9 +54,16 @@ variable "instance_size" {
   type        = string
 }
 
-variable "mongodb_major_ver" {
-  description = "The MongoDB cluster major version"
+variable "mongodb_major_version" {
+  description = "The MongoDB cluster major version, must be specified if mongodb_version_release_system = LTS"
   type        = number
+  default     = null
+}
+
+variable "mongodb_version_release_system" {
+  description = "The version release system to use - LTS/CONTINUOUS"
+  type = string
+  default = "LTS"
 }
 
 variable "cluster_type" {
@@ -69,10 +76,10 @@ variable "num_shards" {
   type        = number
 }
 
-variable "replication_factor" {
-  description = "The Number of replica set members, possible values are 3/5/7"
+variable "num_nodes" {
+  description = "The Number of electable nodes"
   type        = number
-  default     = null
+  default     = 3
 }
 
 variable "backup_enabled" {
@@ -153,7 +160,8 @@ variable "termination_protection_enabled" {
   default = true
 }
 
-
-
-
-
+variable "atlas_vpc_cidr_block" {
+  description = "The CIDR block to use for the Atlas VPC/network Container"
+  type = string
+  default = "192.168.248.0/21"
+}
