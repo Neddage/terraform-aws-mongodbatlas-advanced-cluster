@@ -124,7 +124,7 @@ resource "mongodbatlas_advanced_cluster" "cluster" {
 # CREATE AWS PEER REQUESTS TO AWS VPC
 # ---------------------------------------------------------------------------------------------------------------------
 resource "mongodbatlas_network_peering" "mongo_peer" {
-  for_each = var.vpc_peer
+  for_each = {for i, p in var.vpc_peers: i => p}
 
   accepter_region_name   = each.value.region
   project_id             = mongodbatlas_project.project.id
@@ -133,13 +133,48 @@ resource "mongodbatlas_network_peering" "mongo_peer" {
   route_table_cidr_block = each.value.route_table_cidr_block
   vpc_id                 = each.value.vpc_id
   aws_account_id         = each.value.aws_account_id
+  
 }
 
 # ---------------------------------------------------------------------------------------------------------------------
-# ACCEPT THE PEER REQUESTS ON THE AWS SIDE
+# ADD VPC CIDR TO WHITELIST
+# ---------------------------------------------------------------------------------------------------------------------
+resource "mongodbatlas_project_ip_access_list" "vpc" {
+  for_each = {for i, p in var.vpc_peers: i => p}
+  project_id = mongodbatlas_project.project.id
+  comment    = "AWS VPC CIDR #${each.key}"
+  cidr_block = each.value.route_table_cidr_block
+}
+
+# ---------------------------------------------------------------------------------------------------------------------
+# ACCEPT THE PEER REQUESTS ON AWS
 # ---------------------------------------------------------------------------------------------------------------------
 resource "aws_vpc_peering_connection_accepter" "peer" {
-  for_each = var.vpc_peer
+  for_each = {for i, p in var.vpc_peers: i => p}
   vpc_peering_connection_id = mongodbatlas_network_peering.mongo_peer[each.key].connection_id
   auto_accept               = true
+  
+}
+
+# ---------------------------------------------------------------------------------------------------------------------
+# ADD ROUTE INTO ROUTE TABLES ON AWS
+# ---------------------------------------------------------------------------------------------------------------------
+resource "aws_route" "peer" {
+  for_each = {
+    for i, peer_rt in flatten([
+      for peer_key, peer in var.vpc_peers : [
+        for rt_key, rt in peer.route_tables : {
+          connection_id = mongodbatlas_network_peering.mongo_peer[peer_key].connection_id
+          route_table_id = rt
+        }
+      ]
+    ]) : i => peer_rt
+  }
+  # for_each = tomap(flatten([ for i, p in var.vpc_peer: [for rti, rt in p.route_tables: {
+  #   connection_id = mongodbatlas_network_peering.mongo_peer[i].connection_id
+  #   route_table_id = var.vpc_peer[i].route_tables[rti]
+  # }]]))
+  route_table_id = each.value.route_table_id
+  destination_cidr_block = var.atlas_vpc_cidr_block
+  vpc_peering_connection_id = each.value.connection_id
 }
