@@ -19,10 +19,9 @@ terraform {
 }
 
 # ---------------------------------------------------------------------------------------------------------------------
-# IF var.create_new_project=true CREATE AN ATLAS PROJECT THAT THE CLUSTER WILL RUN INSIDE
+# CREATE AN ATLAS PROJECT THAT THE CLUSTER WILL RUN INSIDE
 # ---------------------------------------------------------------------------------------------------------------------
 resource "mongodbatlas_project" "project" {
-  count = var.create_new_project ? 1 : 0
   name   = var.project_name
   org_id = var.org_id
 
@@ -39,13 +38,14 @@ resource "mongodbatlas_project" "project" {
 }
 
 # ---------------------------------------------------------------------------------------------------------------------
-# IF var.create_new_project=false CREATE DATA RESOURCE FOTR EXISTING PROJECT 
+# CREATE NETWORK CONTAINER
 # ---------------------------------------------------------------------------------------------------------------------
-data "mongodbatlas_project" "project" {
-  # If we are meant to be creating a new project, don't create this data resource as the project won't exist yet
-  count = var.create_new_project ? 0 : 1
-  name = var.project_name
-}
+resource "mongodbatlas_network_container" "container" {
+    project_id       = mongodbatlas_project.project.id 
+    atlas_cidr_block = var.atlas_vpc_cidr_block
+    provider_name    = "AWS"
+    region_name      = var.region_aws_atlas_map[var.region]
+} 
 
 # ---------------------------------------------------------------------------------------------------------------------
 # CREATE TEAMS FROM **EXISTING USERS**
@@ -68,7 +68,7 @@ resource "mongodbatlas_teams" "team" {
 resource "mongodbatlas_project_ip_access_list" "whitelists" {
   for_each = var.white_lists
 
-  project_id = var.create_new_project ? mongodbatlas_project.project[0].id : data.mongodbatlas_project.project[0].id
+  project_id = mongodbatlas_project.project.id
   comment    = each.key
   cidr_block = each.value
 }
@@ -78,13 +78,14 @@ resource "mongodbatlas_project_ip_access_list" "whitelists" {
 # ---------------------------------------------------------------------------------------------------------------------
 
 resource "mongodbatlas_advanced_cluster" "cluster" {
-  project_id                   = var.create_new_project ? mongodbatlas_project.project[0].id : data.mongodbatlas_project.project[0].id
+  project_id                   = mongodbatlas_project.project.id
   name                         = var.cluster_name
   cluster_type                 = var.cluster_type
   backup_enabled               = var.backup_enabled
   disk_size_gb                 = var.disk_size_gb
-  encryption_at_rest_provider = var.encryption_at_rest_enabled ? "AWS" : "NONE"
-  mongo_db_major_version       = var.mongodb_major_ver
+  encryption_at_rest_provider  = var.encryption_at_rest_enabled ? "AWS" : "NONE"
+  mongo_db_major_version       = var.mongodb_version_release_system == "LTS" ? var.mongodb_major_version : null
+  version_release_system       = var.mongodb_version_release_system
   pit_enabled                  = var.pit_enabled
   replication_specs {
     num_shards = var.cluster_type == "REPLICASET" ? null : var.num_shards
@@ -103,6 +104,7 @@ resource "mongodbatlas_advanced_cluster" "cluster" {
         instance_size = var.instance_size
         disk_iops = var.disk_iops
         ebs_volume_type = var.volume_type
+        node_count = var.num_nodes
       }
     }
   }
@@ -110,12 +112,12 @@ resource "mongodbatlas_advanced_cluster" "cluster" {
 
  
   # Ignore instance_size lifecycle changes so if the clsuter is scaled up/down terraform doesn't try to reset it
-  # THis isn't working, have implimented against documentation bgut stil no dice. So commented out for now
-  lifecycle {
-    ignore_changes = [
-      instance_size
-    ]
-  }
+  # This isn't working, have implemented against documentation but stil no dice. So commented out for now
+  # lifecycle {
+  #   ignore_changes = [
+  #     instance_size
+  #   ]
+  # }
 }
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -125,9 +127,8 @@ resource "mongodbatlas_network_peering" "mongo_peer" {
   for_each = var.vpc_peer
 
   accepter_region_name   = each.value.region
-  project_id             = var.create_new_project ? mongodbatlas_project.project[0].id : data.mongodbatlas_project.project[0].id
-  # Doesn't feel like the best way to do this, however I think there should only ever be one container_id anyway, certainly for our needs of AWS only
-  container_id           = mongodbatlas_advanced_cluster.cluster.replication_specs.*.container_id[0]
+  project_id             = mongodbatlas_project.project.id
+  container_id           = mongodbatlas_network_container.container.id
   provider_name          = "AWS"
   route_table_cidr_block = each.value.route_table_cidr_block
   vpc_id                 = each.value.vpc_id
@@ -137,10 +138,8 @@ resource "mongodbatlas_network_peering" "mongo_peer" {
 # ---------------------------------------------------------------------------------------------------------------------
 # ACCEPT THE PEER REQUESTS ON THE AWS SIDE
 # ---------------------------------------------------------------------------------------------------------------------
-
 resource "aws_vpc_peering_connection_accepter" "peer" {
   for_each = var.vpc_peer
-
   vpc_peering_connection_id = mongodbatlas_network_peering.mongo_peer[each.key].connection_id
   auto_accept               = true
 }
