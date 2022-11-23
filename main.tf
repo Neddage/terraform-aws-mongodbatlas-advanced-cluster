@@ -124,7 +124,7 @@ resource "mongodbatlas_advanced_cluster" "cluster" {
 # CREATE AWS PEER REQUESTS TO AWS VPC
 # ---------------------------------------------------------------------------------------------------------------------
 resource "mongodbatlas_network_peering" "mongo_peer" {
-  for_each = { for i, p in var.vpc_peers : i => p }
+  for_each = var.vpc_peers
 
   accepter_region_name   = each.value.region
   project_id             = mongodbatlas_project.project.id
@@ -140,7 +140,7 @@ resource "mongodbatlas_network_peering" "mongo_peer" {
 # ADD VPC CIDR TO WHITELIST
 # ---------------------------------------------------------------------------------------------------------------------
 resource "mongodbatlas_project_ip_access_list" "vpc" {
-  for_each   = { for i, p in var.vpc_peers : i => p }
+  for_each   = var.vpc_peers
   project_id = mongodbatlas_project.project.id
   comment    = "AWS VPC CIDR #${each.key}"
   cidr_block = each.value.route_table_cidr_block
@@ -150,7 +150,7 @@ resource "mongodbatlas_project_ip_access_list" "vpc" {
 # ACCEPT THE PEER REQUESTS ON AWS
 # ---------------------------------------------------------------------------------------------------------------------
 resource "aws_vpc_peering_connection_accepter" "peer" {
-  for_each                  = { for i, p in var.vpc_peers : i => p }
+  for_each                  = var.vpc_peers
   vpc_peering_connection_id = mongodbatlas_network_peering.mongo_peer[each.key].connection_id
   auto_accept               = true
 
