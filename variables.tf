@@ -150,14 +150,14 @@ variable "encryption_at_rest_enabled" {
 
 variable "vpc_peers" {
   description = "A list of objects that contains all the info needed for AWS VPC peers"
-  type = list(object({
+  type = map(object({
     aws_account_id         = string
     region                 = string
     vpc_id                 = string
     route_table_cidr_block = string
     route_tables : list(string) # Route tables to add routes to atlas vpc to
   }))
-  default = []
+  default = {}
 }
 
 variable "termination_protection_enabled" {
