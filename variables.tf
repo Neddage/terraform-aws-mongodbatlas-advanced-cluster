@@ -33,14 +33,14 @@ variable "white_lists" {
 
 variable "region_aws_atlas_map" {
   description = "Maps aws region format to the atlas region format ie. eu-west-2 = EU_WEST_2"
-  type = map(any)
+  type        = map(any)
   default = {
-    "eu-west-1" = "EU_WEST_1"
-    "eu-west-2" = "EU_WEST_2"
-    "eu-west-3" = "EU_WEST_3"
+    "eu-west-1"    = "EU_WEST_1"
+    "eu-west-2"    = "EU_WEST_2"
+    "eu-west-3"    = "EU_WEST_3"
     "eu-central-1" = "EU_CENTRAL_1"
-    "eu-north-1" = "EU_NORTH_1"
-    "eu-south-1" = "EU_SOUTH_1"
+    "eu-north-1"   = "EU_NORTH_1"
+    "eu-south-1"   = "EU_SOUTH_1"
   }
 }
 
@@ -62,8 +62,8 @@ variable "mongodb_major_version" {
 
 variable "mongodb_version_release_system" {
   description = "The version release system to use - LTS/CONTINUOUS"
-  type = string
-  default = "LTS"
+  type        = string
+  default     = "LTS"
 }
 
 variable "cluster_type" {
@@ -120,14 +120,14 @@ variable "auto_scaling_compute_scale_down_enabled" {
 
 variable "auto_scaling_compute_min_instance_size" {
   description = "The minimum instance size for compute autoscaling"
-  type = string
-  default = null
+  type        = string
+  default     = null
 }
 
 variable "auto_scaling_compute_max_instance_size" {
   description = "The maximum instance size for compute autoscaling"
-  type = string
-  default = null
+  type        = string
+  default     = null
 }
 
 variable "volume_type" {
@@ -150,24 +150,24 @@ variable "encryption_at_rest_enabled" {
 
 variable "vpc_peers" {
   description = "A list of objects that contains all the info needed for AWS VPC peers"
-  type        = list(object({
-    aws_account_id = string
-    region = string
-    vpc_id = string
+  type = list(object({
+    aws_account_id         = string
+    region                 = string
+    vpc_id                 = string
     route_table_cidr_block = string
-    route_tables: list(string) # Route tables to add routes to atlas vpc to
+    route_tables : list(string) # Route tables to add routes to atlas vpc to
   }))
-  default     = []
+  default = []
 }
 
 variable "termination_protection_enabled" {
   description = "Whether termination protections should be enabled, defaults to true"
-  type = bool
-  default = true
+  type        = bool
+  default     = true
 }
 
 variable "atlas_vpc_cidr_block" {
   description = "The CIDR block to use for the Atlas VPC/network Container"
-  type = string
-  default = "192.168.248.0/21"
+  type        = string
+  default     = "192.168.248.0/21"
 }
