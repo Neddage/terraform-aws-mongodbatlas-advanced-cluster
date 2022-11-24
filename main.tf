@@ -148,7 +148,6 @@ resource "aws_vpc_peering_connection_accepter" "peer" {
   for_each                  = var.vpc_peers
   vpc_peering_connection_id = mongodbatlas_network_peering.mongo_peer[each.key].connection_id
   auto_accept               = true
-
 }
 
 # ---------------------------------------------------------------------------------------------------------------------
