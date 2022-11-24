@@ -194,7 +194,7 @@ You can see a [full example](https://github.com/Neddage/terraform-aws-mongodbatl
 | cluster_type | The MongoDB Atlas cluster type - SHARDED/REPLICASET/GEOSHARDED. | `string` | `"REPLICASET"` | no |
 | num_shards | number of shards. | `number` | `null` | no |
 | num_nodes | number of nodes. | `number` | `3` | no |
-| pit_enabled | Indicating if the cluster uses Cloud Backup for backups. | `bool` | `false` | no |
+| backup_enabled | Indicating if the cluster uses Cloud Backup for backups. | `bool` | `false` | no |
 | pit_enabled | Indicating if the cluster uses Continuous Cloud Backup, if set to true - backup_enabled must also be set to true | `bool` | `false` | no |
 | disk_size_gb | Capacity,in gigabytes,of the host’s root volume. | `number` | `null` | no |
 | auto_scaling_disk_gb_enabled | Indicating if disk auto-scaling is enabled. | `bool` | `false` | no |
