@@ -149,6 +149,7 @@ variable "vpc_peers" {
     region                 = string
     vpc_id                 = string
     route_table_cidr_block = string
+    add_cidr_to_whitelist  = bool
     route_tables : list(string) # Route tables to add routes to atlas vpc to
   }))
   default = {}
