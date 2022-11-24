@@ -5,7 +5,7 @@ provider "aws" {
 provider "mongodbatlas" {}
 
 
-module "advanced_atlas_cluster" {
+module "atlas_advanced_cluster" {
   source = "../../"
 
   project_name  = "my-atlas-project"
@@ -62,7 +62,7 @@ module "advanced_atlas_cluster" {
       aws_account_id         = "123456789098"
       region                 = "eu-west-2"
       vpc_id                 = "vpc-0420c7a65412fdr3e"
-      route_table_cidr_block = "172.31.0.0/16"
+      route_table_cidr_block = "10.0.0.0/16"
       add_cidr_to_whitelist  = true
       route_tables = [
         "rtb-10e4b8ccface7f771",
