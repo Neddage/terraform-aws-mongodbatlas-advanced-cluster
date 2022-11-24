@@ -164,10 +164,6 @@ resource "aws_route" "peer" {
       ]
     ]) : i => peer_rt
   }
-  # for_each = tomap(flatten([ for i, p in var.vpc_peer: [for rti, rt in p.route_tables: {
-  #   connection_id = mongodbatlas_network_peering.mongo_peer[i].connection_id
-  #   route_table_id = var.vpc_peer[i].route_tables[rti]
-  # }]]))
   route_table_id            = each.value.route_table_id
   destination_cidr_block    = var.atlas_vpc_cidr_block
   vpc_peering_connection_id = each.value.connection_id
