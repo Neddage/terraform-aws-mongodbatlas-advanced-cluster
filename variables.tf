@@ -144,6 +144,18 @@ variable "encryption_at_rest_enabled" {
   default     = false
 }
 
+variable "termination_protection_enabled" {
+  description = "Whether termination protections should be enabled, defaults to true"
+  type        = bool
+  default     = true
+}
+
+variable "atlas_vpc_cidr_block" {
+  description = "The CIDR block to use for the Atlas VPC/network Container"
+  type        = string
+  default     = "192.168.248.0/21"
+}
+
 variable "vpc_peers" {
   description = "A list of objects that contains all the info needed for AWS VPC peers"
   type = map(object({
@@ -155,16 +167,4 @@ variable "vpc_peers" {
     route_tables : list(string) # Route tables to add routes to atlas vpc to
   }))
   default = {}
-}
-
-variable "termination_protection_enabled" {
-  description = "Whether termination protections should be enabled, defaults to true"
-  type        = bool
-  default     = true
-}
-
-variable "atlas_vpc_cidr_block" {
-  description = "The CIDR block to use for the Atlas VPC/network Container"
-  type        = string
-  default     = "192.168.248.0/21"
 }
