@@ -13,12 +13,6 @@ variable "region" {
   type        = string
 }
 
-# variable "create_new_project" {
-#   description = "Whether we should create a new project rather than using an existing one."
-#   type = bool
-#   default = false
-# }
-
 variable "teams" {
   description = "An object that contains all the groups that should be created in the project"
   type        = map(any)
