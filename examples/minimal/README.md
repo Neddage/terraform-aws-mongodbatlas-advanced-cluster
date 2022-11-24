@@ -1,0 +1,1 @@
+This folder contains an example using all available inputs/configuration options.
