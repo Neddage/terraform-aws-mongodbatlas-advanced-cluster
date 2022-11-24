@@ -57,17 +57,19 @@ variable "mongodb_major_version" {
 variable "mongodb_version_release_system" {
   description = "The version release system to use - LTS/CONTINUOUS"
   type        = string
-  default     = "LTS"
+  default     = "CONTINUOUS"
 }
 
 variable "cluster_type" {
   description = "The MongoDB Atlas cluster type - SHARDED/REPLICASET/GEOSHARDED"
   type        = string
+  default     = "REPLICASET"
 }
 
 variable "num_shards" {
   description = "number of shards"
   type        = number
+  default     = null
 }
 
 variable "num_nodes" {
@@ -79,13 +81,13 @@ variable "num_nodes" {
 variable "backup_enabled" {
   description = "Indicating if the cluster uses Cloud Backup for backups"
   type        = bool
-  default     = true
+  default     = false
 }
 
 variable "pit_enabled" {
   description = "Indicating if the cluster uses Continuous Cloud Backup, if set to true - backup_enabled must also be set to true"
   type        = bool
-  default     = true
+  default     = false
 }
 
 variable "disk_size_gb" {
@@ -97,7 +99,7 @@ variable "disk_size_gb" {
 variable "auto_scaling_disk_gb_enabled" {
   description = "Indicating if disk auto-scaling is enabled"
   type        = bool
-  default     = true
+  default     = false
 }
 
 variable "auto_scaling_compute_enabled" {
