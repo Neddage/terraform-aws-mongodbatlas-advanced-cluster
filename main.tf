@@ -140,7 +140,7 @@ resource "mongodbatlas_network_peering" "mongo_peer" {
 # ADD VPC CIDR TO WHITELIST
 # ---------------------------------------------------------------------------------------------------------------------
 resource "mongodbatlas_project_ip_access_list" "vpc" {
-  for_each   = { for k, v in var.vpc_peers: k => v if v.add_cidr_to_whitelist}
+  for_each   = { for k, v in var.vpc_peers : k => v if v.add_cidr_to_whitelist }
   project_id = mongodbatlas_project.project.id
   comment    = "AWS VPC CIDR #${each.key}"
   cidr_block = each.value.route_table_cidr_block
