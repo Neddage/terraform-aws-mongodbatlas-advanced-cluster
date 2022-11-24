@@ -1,25 +1,50 @@
-# terraform-aws-mongodbatlas
-Terraform module which creates a MongoDB Atlas cluster on AWS
+# terraform-aws-mongodbatlas-advanced-cluster
 
-These types of resources are supported:
-* [Project](https://www.terraform.io/docs/providers/mongodbatlas/r/project.html)
-* [Cluster](https://www.terraform.io/docs/providers/mongodbatlas/r/cluster.html)
-* [Teams](https://www.terraform.io/docs/providers/mongodbatlas/r/team.html)
-* [Whitelists](https://www.terraform.io/docs/providers/mongodbatlas/r/project_ip_whitelist.html)
-* [Network Peering](https://www.terraform.io/docs/providers/mongodbatlas/r/network_peering.html)
+Terraform module which creates an MongoDB Atlas cluster on AWS with VPC peering, using the advanced_cluster resource type. This module is based on [guyelia/terraform-aws-mongodbatlas](https://github.com/guyelia/terraform-aws-mongodbatlas) with updated resource types and additional configuration options.
+
+The module will launch a mongodb atlas cluster on AWS in a single region into a new project. It will create the appropriate atlas network container and configure the VPC peering connections between the new atlas cluster VPC and the VPCs specified via the input variables. 
+
+These types of resources are supported/created:
+* [Project](https://registry.terraform.io/providers/mongodb/mongodbatlas/latest/docs/resources/project.html)
+* [Teams](https://registry.terraform.io/providers/mongodb/mongodbatlas/latest/docs/resources/teams)
+* [Network Container](https://registry.terraform.io/providers/mongodb/mongodbatlas/latest/docs/resources/network_container)
+* [Project IP Access List](https://registry.terraform.io/providers/mongodb/mongodbatlas/latest/docs/data-sources/project_ip_access_list)
+* [Advanced Cluster](https://registry.terraform.io/providers/mongodb/mongodbatlas/latest/docs/data-sources/advanced_cluster)
+* [Network Peering](https://registry.terraform.io/providers/mongodb/mongodbatlas/latest/docs/data-sources/network_peering)
+* [AWS VPC Peering Connection Accepter](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/vpc_peering_connection_accepter)
+* [AWS Route](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/route)
 
 ## Terraform versions
 
-Terraform versions >=0.12 are supported
+Terraform versions >=1.0.0 are supported
    
 ## Usage
+### Minimal Example
+```hcl
+module "atlas_advanced_cluster" {
+  source = ".//terraform-aws-mongodbatlas-advanced-cluster"
+
+  project_name="my-atlas-project"
+  org_id="996228199622819962281"
+  region="eu-west-2"
+  
+  cluster_name = "my-cluster"
+  instance_size = "M10"
+  
+}
+```
+
+### Full Example
 
 ```hcl
-module "atlas_cluster" {
-  source = ".//terraform-aws-mongodbatlas"
+module "atlas_advanced_cluster" {
+  source = ".//terraform-aws-mongodbatlas-advanced-cluster"
 
-  project_name = "my-project"
-  org_id = "5edf67f9b9b528996228111"
+  project_name="my-atlas-project"
+  org_id="996228199622819962281"
+  region="eu-west-2"
+  cluster_name = "my-cluster"
+  instance_size = "M10"
 
   teams = {
     Devops: {
@@ -31,24 +56,54 @@ module "atlas_cluster" {
       role: "GROUP_READ_ONLY"
     }
   }
-
   white_lists = {
     "example comment": "10.0.0.1/32",
     "second example": "10.10.10.8/32"
   }
-
-  region = "EU_WEST_1"
-
-  cluster_name = "MyCluster"
-
-  instance_type = "M30"
-  mongodb_major_ver = 4.2
+  mongodb_major_version = 6.1
+  mongodb_version_release_system = "CONTINUOUS"
   cluster_type = "REPLICASET"
   num_shards = 1
-  replication_factor = 3
-  provider_backup = true
-  pit_enabled = false
-
+  num_nodes = 3
+  backup_enabled = true
+  pit_enabled =  true
+  disk_size_gb = 20
+  auto_scaling_disk_gb_enabled = true
+  auto_scaling_compute_enabled = true
+  auto_scaling_compute_scale_down_enabled = true
+  auto_scaling_compute_min_instance_size = "M10"
+  auto_scaling_compute_max_instance_size = "M30"
+  volume_type = "STANDARD"
+  disk_iops = 1000
+  encryption_at_rest_enabled = false
+  termination_protection_enabled = true
+  atlas_vpc_cidr_block = "192.168.248.0/21"
+  vpc_peers = {
+    peer1 : {
+      aws_account_id = "890987654321"
+      region = "eu-west-1"
+      vpc_id = "vpc-0660c7a86412fdr3e"
+      route_table_cidr_block = "172.16.0.0/16"
+      add_cidr_to_whitelist = true
+      route_tables = [
+        "rtb-08e4b8ccface7f466",
+        "rtb-18yu75trface7d787",
+        "rtb-77h4b8ccfty75gg46"
+      ] 
+    },
+    peer2 : {
+      aws_account_id = "123456789098"
+      region = "eu-west-2"
+      vpc_id = "vpc-0660c7a86412fdr3e"
+      route_table_cidr_block = "172.31.0.0/16"
+      add_cidr_to_whitelist = true
+      route_tables = [
+        "rtb-10e4b8ccface7f771",
+        "rtb-55pu21arface7d707",
+        "rtb-91h4b8frfty75gg46"
+      ] 
+    }
+  }  
 }
 ```
 ## Prerequisites
@@ -71,40 +126,54 @@ In case vpc peering is required, AWS provider will be used, the following inform
 * VPC ID
 * [AWS account ID](https://docs.aws.amazon.com/general/latest/gr/acct-identifiers.html)
 * Region
-* [Routable cidr block](https://www.terraform.io/docs/providers/mongodbatlas/r/network_peering.html#route_table_cidr_block)
+* [Routable cidr block](https://registry.terraform.io/providers/mongodb/mongodbatlas/latest/docs/resources/network_peering.html#route_table_cidr_block)
+* List of [Route Table](https://docs.aws.amazon.com/vpc/latest/userguide/VPC_Route_Tables.html) Ids to add routes to atlas vpc to.
 
-You can add them manually, or through other Terraform resources, and pass it to the module via ```vpc_peer``` variable:
+You can add them manually, or through other Terraform resources, and pass it to the module via ```vpc_peers``` variable:
 ```hcl
-  vpc_peer = {
-    vpc_peer1 : {
-      aws_account_id : "020201234877"
-      region : "eu-west-1"
-      vpc_id : "vpc-0240c8a47312svc3e"
-      route_table_cidr_block : "172.16.0.0/16"
+  vpc_peers = {
+    peer1 : {
+      aws_account_id = "890987654321"
+      region = "eu-west-1"
+      vpc_id = "vpc-0660c7a86412fdr3e"
+      route_table_cidr_block = "172.16.0.0/16"
+      add_cidr_to_whitelist = true
+      route_tables = [
+        "rtb-08e4b8ccface7f466",
+        "rtb-18yu75trface7d787",
+        "rtb-77h4b8ccfty75gg46"
+      ] 
     },
-    vpc_peer2 : {
-      aws_account_id : "0205432147877"
-      region : "eu-central-1"
-      vpc_id : "vpc-0f0dd82430bhv0e1a"
-      route_table_cidr_block : "172.17.0.0/16"
+    peer2 : {
+      aws_account_id = "123456789098"
+      region = "eu-west-2"
+      vpc_id = "vpc-0660c7a86412fdr3e"
+      route_table_cidr_block = "172.31.0.0/16"
+      add_cidr_to_whitelist = true
+      route_tables = [
+        "rtb-10e4b8ccface7f771",
+        "rtb-55pu21arface7d707",
+        "rtb-91h4b8frfty75gg46"
+      ] 
     }
   }
 ```
 
-You can see this [example](https://github.com/guyelia/terraform-aws-mongodbatlas/blob/master/examples/basic/main.tf) in the examples folder.
+You can see a [full example](https://github.com/Neddage/terraform-aws-mongodbatlas-advanced-cluster/blob/master/examples/full/main.tf) in the examples folder.
 
 ## Requirements
 
 | Name | Version |
 |------|---------|
-| terraform | \>= 0.12 |
+| terraform | \>= 1.00 |
 
 
 ## Providers
 
 | Name | Version |
 |------|---------|
-|mongodbatlas|
+|mongodb/mongodbatlas|\>= 1.6.0 |
+|hashicorp/aws|\>= 4.22 |
 
 
 
@@ -113,38 +182,73 @@ You can see this [example](https://github.com/guyelia/terraform-aws-mongodbatlas
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
-| auto_scaling_disk_gb_enabled | Indicating if disk auto-scaling is enabled. | `bool` | `true` | no |
-| cluster_name | The cluster name. | `string` | `""` | yes |
-| cluster_type | The MongoDB Atlas cluster type - SHARDED/REPLICASET/GEOSHARDED. | `string` | `""` | yes |
-| disk_size_gb | Capacity,in gigabytes,of the host’s root volume. | `number` |  | no |
-| instance_type | The Atlas instance-type name. | `string` | `""` | yes |
-| mongodb_major_ver | The MongoDB cluster major version. | `number` | `""` | no |
-| num_shards | number of shards. | `number` | `""` | no |
-| org_id | The ID of the Atlas organization you want to create the project within. | `string` | `""` | yes |
-| pit_enabled | Indicating if the cluster uses Continuous Cloud Backup. | `bool` | `false` | no |
-| project_name | The name of the project you want to create. | `string` | `""` | yes |
-| provider_backup | Indicating if the cluster uses Cloud Backup for backups. | `bool` | `true` | no |
-| provider_disk_iops | The maximum IOPS the system can perform. | `number` | | no |
-| provider_encrypt_ebs_volume | Indicating if the AWS EBS encryption feature encrypts the server’s root volume. | `bool` | `false` | no |
-| region | The AWS region-name that the cluster will be deployed on. | `string` | `""` | yes |
-| replication_factor | The Number of replica set members, possible values are 3/5/7. | `number` |  | no |
+| project_name | The name of the project you want to create. | `string` |  | yes |
+| org_id | The ID of the Atlas organization you want to create the project within. | `string` |  | yes |
+| region | The AWS region-name that the cluster will be deployed on. | `string` |  | yes |
+| cluster_name | The cluster name. | `string` |  | yes |
+| instance_size | The Atlas instance-type name. | `string` |  | yes |
 | teams | An object that contains all the groups that should be created in the project. | `map(any)` | `{}` | no |
-| volume_type | STANDARD or PROVISIONED for IOPS higher than the default instance IOPS. | `string` | `STANDARD` | no |
-| vpc_peer | An object that contains all VPC peering requests from the cluster to AWS VPC's | `map(any)` | {} | no
 | white_lists | An object that contains all the network white-lists that should be created in the project. | `map(any)` | `{}` | no |
+| mongodb_major_version | The MongoDB cluster major version, must be specified if mongodb_version_release_system = LTS | `number` | `null` | no |
+| mongodb_version_release_system | The version release system to use - LTS/CONTINUOUS | `string` | `"CONTINUOUS"` | no |
+| cluster_type | The MongoDB Atlas cluster type - SHARDED/REPLICASET/GEOSHARDED. | `string` | `"REPLICASET"` | no |
+| num_shards | number of shards. | `number` | `null` | no |
+| num_nodes | number of nodes. | `number` | `3` | no |
+| pit_enabled | Indicating if the cluster uses Cloud Backup for backups. | `bool` | `false` | no |
+| pit_enabled | Indicating if the cluster uses Continuous Cloud Backup, if set to true - backup_enabled must also be set to true | `bool` | `false` | no |
+| disk_size_gb | Capacity,in gigabytes,of the host’s root volume. | `number` | `null` | no |
+| auto_scaling_disk_gb_enabled | Indicating if disk auto-scaling is enabled. | `bool` | `false` | no |
+| auto_scaling_compute_enabled | Indicating if compute auto scaling should be enabled | `bool` | `false` | no |
+| auto_scaling_compute_scale_down_enabled | Flag that indicates whether the instance size may scale down. | `bool` | `false` | no |
+| auto_scaling_compute_min_instance_size | The minimum instance size for compute autoscaling | `string` | `null` | no |
+| auto_scaling_compute_max_instance_size | The maximum instance size for compute autoscaling | `string` | `null` | no |
+| volume_type | STANDARD or PROVISIONED for IOPS higher than the default instance IOPS. | `string` | `"STANDARD"` | no |
+| disk_iops | The maximum IOPS the system can perform | `number` | `null` | no |
+| encryption_at_rest_enabled | Indicating if the AWS EBS encryption feature encrypts the server’s root volume | `bool` | `false` | no |
+| termination_protection_enabled | Whether termination protections should be enabled, defaults to true | `bool` | `true` | no |
+| atlas_vpc_cidr_block | The CIDR block to use for the Atlas VPC/network Container | `string` | `"192.168.248.0/21"` | no |
+| vpc_peers | An object that contains all VPC peering requests from the cluster to AWS VPC's. See below for object format/details. | `map(any)` | `{}` | no
 
+### VPC Peer Objects
+
+If you wish to setup VPC peering then provide a map of VPC peer objects to via the `vpc_peers` input. 
+
+Example peer object:
+
+```
+{
+  aws_account_id = "123456789098"
+  region = "eu-west-2"
+  vpc_id = "vpc-0660c7a86412fdr3e"
+  route_table_cidr_block = "172.31.0.0/16"
+  add_cidr_to_whitelist = true
+  route_tables = [
+    "rtb-10e4b8ccface7f771",
+    "rtb-55pu21arface7d707",
+    "rtb-91h4b8frfty75gg46"
+  ] 
+}
+```
+
+#### Peer Object Parameters
+
+| Name | Description | Type | Default | Required |
+|------|-------------|------|---------|:--------:|
+| aws_account_id | The ID of the AWS account containing the VPC to peer with  | `string` |  | yes |
+| region | The AWS region  that the VPC to peer with is in | `string` |  | yes |
+| vpc_id | The VPC ID of the VPC to peer with | `string` |  | yes |
+| route_table_cidr_block | The CIDR block for the VPC | `string` |  | yes |
+| add_cidr_to_whitelist | An object that contains all the groups that should be created in the project. | `bool` |  | yes |
+| route_tables | A list of AWS route table IDs which should be updated to add route traffic designed for the atlas VPC IP range via the VPC peering connection. | `list(string)` | `[]` | no |
 
 ## Outputs
+
+TODO: Review what is being output and ensure its suitable
 
 | Name | Description |
 |------|-------------|
 | cluster_id | The cluster ID. |
-| connection_strings | Set of connection strings that your applications use to connect to this cluster. |
-| container_id | he Network Peering Container ID. |
 | mongo_db_version | Version of MongoDB the cluster runs, in major-version.minor-version format. |
-| mongo_uri | Base connection string for the cluster. |
-| mongo_uri_updated | Lists when the connection string was last updated. |
-| mongo_uri_with_options | connection string for connecting to the Atlas cluster. Includes the replicaSet, ssl, and authSource query parameters in the connection string with values appropriate for the cluster. |
-| paused | Flag that indicates whether the cluster is paused or not. |
-| srv_address | Connection string for connecting to the Atlas cluster, +srv modifier forces the connection to use TLS/SSL  |
+| connection_strings | Set of connection strings that your applications use to connect to this cluster. |
+| container_id | The Network Peering Container ID. |
 | state_name |  Current state of the cluster. |
