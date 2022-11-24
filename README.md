@@ -1,4 +1,4 @@
-# terraform-aws-mongodbatlas-advanced-cluster
+# terraform-mongodbatlas-cluster-advanced-aws
 
 Terraform module which creates an MongoDB Atlas cluster on AWS with VPC peering, using the advanced_cluster resource type. This module is based on [guyelia/terraform-aws-mongodbatlas](https://github.com/guyelia/terraform-aws-mongodbatlas) with updated resource types and additional configuration options.
 
